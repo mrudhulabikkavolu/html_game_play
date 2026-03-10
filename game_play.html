@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory Matching Game with Sparkles</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      gap: 15px;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .card {
+      width: 100px;
+      height: 100px;
+      background-color: #4e73df;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 2rem;
+      color: white;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card .front, .card .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+    }
+
+    .card .front {
+      background: #4e73df;
+    }
+
+    .card .back {
+      background: #f8f9fc;
+      color: #333;
+      transform: rotateY(180deg);
+      font-size: 2rem;
+    }
+
+    /* Sparkle Effect */
+    .sparkle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, transparent 60%);
+      opacity: 0;
+      animation: sparkleAnim 0.5s ease-out forwards;
+    }
+
+    @keyframes sparkleAnim {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(2); }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-board" id="gameBoard"></div>
+
+  <script>
+    const emojis = ['🍕', '🍔', '🍟', '🌭', '🍿', '🥓', '🍩', '🍪'];
+    let cards = [...emojis, ...emojis];
+    let firstCard = null;
+    let lockBoard = false;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    shuffle(cards);
+
+    const gameBoard = document.getElementById('gameBoard');
+
+    cards.forEach((emoji) => {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      card.innerHTML = `
+        <div class="front"></div>
+        <div class="back">${emoji}</div>
+        <div class="sparkle"></div>
+      `;
+      card.dataset.emoji = emoji;
+
+      card.addEventListener('click', () => {
+        if (lockBoard || card.classList.contains('flipped')) return;
+
+        card.classList.add('flipped');
+
+        if (!firstCard) {
+          firstCard = card;
+        } else {
+          if (firstCard.dataset.emoji === card.dataset.emoji) {
+            // Show sparkle animation
+            firstCard.querySelector('.sparkle').classList.add('sparkle');
+            card.querySelector('.sparkle').classList.add('sparkle');
+
+            // Remove sparkle effect after animation ends
+            setTimeout(() => {
+              firstCard.querySelector('.sparkle').classList.remove('sparkle');
+              card.querySelector('.sparkle').classList.remove('sparkle');
+            }, 500);
+
+            firstCard = null;
+            checkGameOver();
+          } else {
+            lockBoard = true;
+            setTimeout(() => {
+              card.classList.remove('flipped');
+              firstCard.classList.remove('flipped');
+              firstCard = null;
+              lockBoard = false;
+            }, 1000);
+          }
+        }
+      });
+
+      gameBoard.appendChild(card);
+    });
+
+    function checkGameOver() {
+      const flippedCards = document.querySelectorAll('.card.flipped');
+      if (flippedCards.length === cards.length) {
+        setTimeout(() => {
+          alert('🎉 You matched all the cards! Restarting game...');
+          window.location.reload();
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
